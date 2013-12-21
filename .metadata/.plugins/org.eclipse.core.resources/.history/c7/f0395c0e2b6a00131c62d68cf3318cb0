@@ -1,0 +1,155 @@
+/**
+ * References: 
+ * http://aperiodic.net/phil/scala/s-99/
+ * https://github.com/jsuereth/scala-99-puzzles/blob/master/src/test/scala/suereth/TestNinetyNine.scala
+ */
+
+object Puzzles99 extends App {
+  
+  val xs = List(1, 2, 5, -1, 100, 16, 99)
+  val palindrome = List(1, 2, 5, -1, 5, 2, 1)
+  val ys = List('a, 'a, 'a, 'a, 'b, 'c, 'c, 'a, 'a, 'd, 'e, 'e, 'e, 'e)
+  
+  /**
+   * For recursion implementation, the usually direction includes
+   * (1) Linear: P08 - usually equivalent to a foldLeft/foldRight
+   * The key to switch from empirical to FP is to use approxiate combine method to avoid mutation
+   * (2) Tree DF: P07
+   * (3) Twisted: 
+   * (4) Biend Linear: P06
+   */
+  
+  /**
+   * Working with Lists P01 - P28
+   */
+  // P01: Find the last element of a list (builtin)
+  println("P01:" + xs.last)
+  // P02: Find the last but one of a list
+  println("P02:" + xs.init.last)
+  // P03: Find the kth element of a list
+  println("P03:" + xs(3))
+  // P04: Find the number of element in a list
+  println("P04:" + xs.length)
+  // P05: Reverse a list
+  println("P05:" + xs.reverse)
+  // P06: Find out whether a list is palindrome
+  def isPalindrome[T](xs: List[T]) : Boolean = xs match {
+    case Nil => true
+    case x::Nil => true
+    case _ => if (xs.head != xs.last) false else isPalindrome(xs.tail.init)
+  }
+  println("P06:" + isPalindrome(xs))
+  println("P06:" + isPalindrome(palindrome))
+  // P07: Flatten a nested list
+  // Think this as a depth-first traverse - the boundary case is the leaf node
+  def flatten(xs: List[Any]) : List[Any] = 
+    xs flatMap {
+    	case x : List[Any] => flatten(x)
+    	case x => List(x)
+  	}
+  println("P07:" + flatten(List(List(1, 1), 2, List(3, List(5, 8)))))
+  // P08: Eliminate consecutive duplicates of list elements
+  def compress[T](xs: List[T]) : List[T] = xs match {
+    case Nil => Nil
+    case x::xxs => x::compress(xxs dropWhile (_ == x))
+  }
+  def compressFunctional[T](xs: List[T]) : List[T] = 
+    xs.foldRight(List[T]())((x, xs) => if (xs.nonEmpty && x == xs.head) xs else x::xs) 
+  println("P08:" + compress(ys))
+  println("P08 (functional):" + compress(ys))
+  // P09: Pack consecutive duplicates of list elements into sublists
+  def pack[T](xs: List[T]) : List[List[T]] = xs match {
+    case Nil => Nil
+    case x::_ => {
+      val (left, right) = xs span (_ == x)
+      left::pack(right)
+    }
+  }
+  def packFunctional[T](xs: List[T]) : List[List[T]] = 
+    xs.foldRight(List(List[T]())) {
+    case (x, List(Nil)) => List(x::Nil)
+    case (x, xs::rest) => if (x == xs.head) (x::xs)::rest else List(x)::xs::rest
+  }
+  println("P09:" + pack(ys))
+  println("P09:" + packFunctional(ys)) 
+  // P10: Run-length encoding of a list
+  def runLengthEncode[T](xs: List[T]):List[(Int, T)] = 
+    pack(xs) map (xxs => (xxs.length, xxs.head))
+  println("P10: " + runLengthEncode(ys))
+  // P11: Modified run-length encoding
+  // Modify : if an element has no duplicates it is simply copied into the result list
+  def runLengthEncodeModified[T](xs: List[T]):List[Any] = 
+    pack(xs) map {
+    	case x::Nil => x
+    	case xxs => (xxs.length, xxs.head)
+    }
+  println("P11: " + runLengthEncodeModified(ys))
+  // P12:  Decode a run-length encoded list
+  def runLengthDecode[T](xs : List[(Int, T)]) : List[T] = 
+    xs flatMap {case (times, x) => (1 to times) map (_=>x)}
+  println("P12: " + runLengthDecode(runLengthEncode(ys)))
+  // P13: Direct implementation of run length encoding without pack
+  def runLengthEncodeDirect[T](xs: List[T]) : List[(Int, T)] = xs match {
+    case Nil => List[(Int, T)]()
+    case x::xxs => {
+      val (left, rest) = xs span (_ == x)
+      (left.length, x)::runLengthEncodeDirect(rest)
+    }
+  }
+  def runLengthEncodeFunctionalDirect[T](xs: List[T]):List[(Int, T)] = 
+    xs.foldRight(List[(Int, T)]()){
+    	case (x, Nil) => List((1, x))
+    	case (x, (times, y)::accum) => if (x == y) (times+1, y)::accum else (1, x)::(times, y)::accum
+    } 
+  println("P13: " + runLengthEncodeFunctionalDirect(ys))
+  println("P13: " + runLengthEncodeDirect(ys))
+  // P14 - P15: Duplicate the elements of a list a given number of times
+  def duplicate[T](n: Int, xs : List[T]) = 
+    for (x <- xs; _ <- 1 to n) yield x
+  println("P14-15: " + duplicate(3, List('a, 'b, 'c, 'd)))
+  // P16: Drop every Nth element from a list
+  def dropN[T](n: Int, xs: List[T]) : List[T] = 
+    for ((x, i) <- xs.zipWithIndex; if i % n == 0) yield x
+  println("P16: " + dropN(3, xs))
+  // P17-18: Extract a slice of a list
+  def slice[T](start: Int, end: Int, xs: List[T]) : List[T] = 
+    //xs drop start take (end - start)
+    xs slice (start, end)
+  println("P17-18: " + slice(1, 3, xs))
+  // P19: Rotate a list N places to the left
+  def rotateLeft[T](n: Int, xs: List[T]) : List[T] = {
+      val (left, right) = if (n >= 0) xs splitAt n else xs splitAt xs.length+n
+      right ++ left
+    }
+  println("P19: " + rotateLeft(3, List('a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i, 'j, 'k)))
+  println("P19: " + rotateLeft(-2, List('a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i, 'j, 'k)))
+  // P23: Extract a given number of randomly selected elements from a list (WITH REPLACEMENT)
+  def randomSelect[T](n: Int, xs: List[T]) : Seq[T] = 
+    for (_ <- (1 to n); i = scala.util.Random.nextInt(xs.length)) yield xs(i)
+  println("P23: " + randomSelect(3, List('a, 'b, 'c, 'd, 'f, 'g, 'h)))
+  // P24: Lotto: Draw N different random numbers from the set 1..M
+  println("P24: " + lotto(6, 1000))
+  /**
+   * Arithmetic P31 - P41
+   */
+  
+  /** Logic and Codes P46 - P50
+   *  
+   */
+  
+  /** 
+   *  Binary Trees P55 - P69
+   */
+  
+  /**
+   * Multiway Trees P70 - P73
+   */
+  
+  /**
+   * Graphs P80 - P89
+   */
+  
+  /** 
+   *  Miscs P90 - P99
+   */
+}

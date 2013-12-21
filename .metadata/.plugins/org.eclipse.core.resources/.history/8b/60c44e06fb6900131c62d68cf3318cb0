@@ -1,0 +1,8 @@
+/**
+ * References: http://aperiodic.net/phil/scala/s-99/
+ * https://github.com/jsuereth/scala-99-puzzles/blob/master/src/test/scala/suereth/TestNinetyNine.scala
+ */
+
+object Puzzles99 extends App {
+  
+}
