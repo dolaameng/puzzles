@@ -286,7 +286,7 @@ object Puzzles99 extends App {
       def numOfNodes = 0
     }
     case class Node[T] (val value: T, left: Tree[T], right: Tree[T]) extends Tree[T] {
-      override def toString = s"$value($left,$right)"
+      override def toString = s"$value($left|$right)"
       def numOfNodes: Int = 1 + left.numOfNodes + right.numOfNodes
     }
     
@@ -310,7 +310,7 @@ object Puzzles99 extends App {
       else allBalanced(n-1, v).flatMap(appendNode(_)).toSet
     }
     
-    def isSymmetric[T](tree: Tree[T]): Boolean = ??
+    def isSymmetric[T](tree: Tree[T]): Boolean = false
   }
   // P55: Construct completely balanced binary trees
   // In a completely balanced binary tree, the following property holds for every node: 

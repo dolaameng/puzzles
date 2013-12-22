@@ -286,7 +286,7 @@ object Puzzles99 extends App {
       def numOfNodes = 0
     }
     case class Node[T] (val value: T, left: Tree[T], right: Tree[T]) extends Tree[T] {
-      override def toString = s"$value($left,$right)"
+      override def toString = s"$value($left, $right)"
       def numOfNodes: Int = 1 + left.numOfNodes + right.numOfNodes
     }
     

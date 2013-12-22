@@ -262,7 +262,7 @@ object Puzzles99 extends App {
 	    case n1::n2::rest => buildHuffmanTreeR(HuffmanNode(((n1.term+n2.term) -> (n1.freq+n2.freq)), n1, n2)::rest)
 	  }
 	  def visitLeavesR(tree: HuffmanTree) : List[(String, String)] = tree match {
-	    case n: HuffmanLeaf => List((n.tf._1 -> "")) // better be case HuffmanLeaf(tf)
+	    case n: HuffmanLeaf => List((n.tf._1 -> ""))
 	    case n: HuffmanNode => visitLeavesR(n.left).map{case (t, c) => (t-> ("0"+c))} ++ 
 	    					visitLeavesR(n.right).map{case (t, c)=>(t->("1"+c))}
 	  }
@@ -278,52 +278,18 @@ object Puzzles99 extends App {
    *  Binary Trees P55 - P69
    */
   object bt {
-    sealed trait Tree[+T] {
-      def numOfNodes : Int
-    }
+    sealed trait Tree[+T]
     case object Empty extends Tree[Nothing] {
       override def toString = "."
-      def numOfNodes = 0
     }
     case class Node[T] (val value: T, left: Tree[T], right: Tree[T]) extends Tree[T] {
-      override def toString = s"$value($left,$right)"
-      def numOfNodes: Int = 1 + left.numOfNodes + right.numOfNodes
+      override def toString = s"$value($left, $right)"
     }
-    
-    def allBalanced[T](n: Int, v: T) : Set[Tree[T]] = {
-      val newNode = new Node(v, Empty, Empty)
-      def appendNode(balancedTree: Tree[T]) : List[Tree[T]] = {
-        balancedTree match {
-          case Empty => List(newNode)
-          case Node(value, left, right) => {
-            val ln = left.numOfNodes
-            val rn = right.numOfNodes
-            if (ln == rn) {
-              appendNode(left).map(Node(value, _, right)) ++
-          								appendNode(right).map(Node(value, left, _))
-            }else if (ln < rn) appendNode(left).map(Node(value, _, right))
-            else appendNode(right).map(Node(value, left, _))
-          }
-        }
-      }
-      if (n == 1) Set(newNode)
-      else allBalanced(n-1, v).flatMap(appendNode(_)).toSet
-    }
-    
-    def isSymmetric[T](tree: Tree[T]): Boolean = ??
   }
   // P55: Construct completely balanced binary trees
   // In a completely balanced binary tree, the following property holds for every node: 
   // The number of nodes in its left subtree and the number of nodes in its right subtree are almost equal, 
   // which means their difference is not greater than one
-  println("P55: " + bt.allBalanced(4, 'x').mkString("\n"))
-  // P56: Symmetric binary trees
-  // Let us call a binary tree symmetric 
-  // if you can draw a vertical line through the root node and then the right subtree is the mirror image of the left subtree
-  // We are only interested in the structure, not in the contents of the nodes
-  val tree = bt.Node('a, bt.Node('b, bt.Node('c, bt.Empty, bt.Empty), bt.Empty), 
-		  			  bt.Node('d, bt.Empty, bt.Node('e, bt.Empty, bt.Empty)))
-  println(tree)
   /**
    * Multiway Trees P70 - P73
    */

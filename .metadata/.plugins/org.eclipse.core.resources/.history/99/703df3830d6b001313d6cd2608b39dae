@@ -286,7 +286,7 @@ object Puzzles99 extends App {
       def numOfNodes = 0
     }
     case class Node[T] (val value: T, left: Tree[T], right: Tree[T]) extends Tree[T] {
-      override def toString = s"$value($left,$right)"
+      override def toString = s"$value($left, $right)"
       def numOfNodes: Int = 1 + left.numOfNodes + right.numOfNodes
     }
     
@@ -321,9 +321,8 @@ object Puzzles99 extends App {
   // Let us call a binary tree symmetric 
   // if you can draw a vertical line through the root node and then the right subtree is the mirror image of the left subtree
   // We are only interested in the structure, not in the contents of the nodes
-  val tree = bt.Node('a, bt.Node('b, bt.Node('c, bt.Empty, bt.Empty), bt.Empty), 
-		  			  bt.Node('d, bt.Empty, bt.Node('e, bt.Empty, bt.Empty)))
-  println(tree)
+  val tree = Node('a, Node('b, Node('c, Empty, Empty), Empty), 
+		  			  Node('d, Empty, Node('e, Empty, Empty)))
   /**
    * Multiway Trees P70 - P73
    */
