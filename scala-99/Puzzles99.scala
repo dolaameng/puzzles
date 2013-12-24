@@ -280,14 +280,30 @@ object Puzzles99 extends App {
   object bt {
     sealed trait Tree[+T] {
       def numOfNodes : Int
+      def addNode[U >: T <% Ordered[U]](value: U) : Tree[U]
+      def preorder : List[T]
+      def inorder : List[T]
     }
     case object Empty extends Tree[Nothing] {
       override def toString = "."
       def numOfNodes = 0
+      def addNode[U  <% Ordered[U]](value: U) : Tree[U] = new Node(value, Empty, Empty)
+      def preorder : List[Nothing] = Nil
+      def inorder : List[Nothing] = Nil
     }
     case class Node[T] (val value: T, left: Tree[T], right: Tree[T]) extends Tree[T] {
       override def toString = s"$value($left,$right)"
       def numOfNodes: Int = 1 + left.numOfNodes + right.numOfNodes
+      def addNode[U >: T <% Ordered[U]] (value : U) : Tree[U] = 
+        if (value == this.value) this
+        else if (value < this.value) new Node(this.value, left.addNode(value), right)
+        else new Node(this.value, left, right.addNode(value))
+      def preorder : List[T] = 
+        value::(left.preorder ++ right.preorder)
+      def inorder : List[T] = left.inorder ++ (value::right.inorder)
+    }
+    object Node {
+      def apply[T](value: T) = new Node(value, Empty, Empty)
     }
     
     def allBalanced[T](n: Int, v: T) : Set[Tree[T]] = {
@@ -310,7 +326,84 @@ object Puzzles99 extends App {
       else allBalanced(n-1, v).flatMap(appendNode(_)).toSet
     }
     
-    def isSymmetric[T](tree: Tree[T]): Boolean = false
+    def isSymmetric[T](tree: Tree[T]): Boolean = {
+      def isMirror(treea: Tree[T], treeb: Tree[T]) : Boolean = (treea, treeb) match {
+        case (Empty, Empty) => true
+        case (Empty, _) => false
+        case (_, Empty) => false
+        case (Node(_, lefta, righta), Node(_, leftb, rightb)) => isMirror(lefta, rightb) && isMirror(leftb, righta)
+      }
+      tree match {
+      	case Empty => true
+      	case Node(_, left, right) => isMirror(left, right)
+      }
+    }
+    
+    def addNodes[U <% Ordered[U]]( xs: List[U]) : Tree[U] = {
+      xs.foldLeft(Empty : Tree[U]){case (t, x) => t.addNode(x)}
+    }
+    
+    def symmetricBalancedTrees[T](n: Int, x: T) : Set[Tree[T]] = 
+      allBalanced(n, x).filter(isSymmetric(_))
+      
+    def countLeaves[T](tree: Tree[T]) : Int = tree match {
+      case Empty => 0
+      case Node(_, left, right) => 1 + countLeaves(left) + countLeaves(right)
+    }
+    def findLeaves[T](tree: Tree[T]) : List[T] = tree match {
+      case Empty => List[Nothing]()
+      case Node(v, left, right) => v::(findLeaves(left) ++ findLeaves(right))
+    }
+    def findInternals[T](tree: Tree[T]) : List[T] = tree match {
+      case Node(_, Empty, Empty) => List[Nothing]()
+      case Empty => List[Nothing]()
+      case Node(x, left, right) => x::(findInternals(left)++findInternals(right))
+    }
+    def findAtLevel[T](tree: Tree[T], n: Int) : List[T] = 
+      if (n == 1) tree match {
+        case Empty => List[Nothing]()
+        case Node(v, _, _) => List(v)
+      }
+      else tree match {
+        case Empty => List[Nothing]()
+        case Node(_, left, right) => findAtLevel(left, n-1) ++ findAtLevel(right, n-1)
+      } 
+    // e.g. a(b(d(.,.),e(.,.)),c(.,f(g(.,.),.)))
+    def parse(s: String) : Tree[Char] = {
+      if (s == ".") Empty : Tree[Char]
+      else {
+	      def splitPoint(s: String) : Int = {
+	        val lrps = s.foldLeft(List[(Int, Int)]((0 -> 0))){
+	        	case (pNums, x) => {
+	        		val (lp, rp) = pNums.last
+	        		if (x == '(') pNums :+ ((lp+1)->rp)
+	        		else if (x == ')') pNums :+ (lp->(rp+1))
+	        		else pNums :+ (lp->rp)
+	         	} 
+	        }
+	        val r = s.zipWithIndex.find{case (x, i) => x==','&&lrps(i)._1==lrps(i)._2+1}
+	        r match {
+	          case None => -1
+	          case Some(i) => i._2
+	        }
+	      }
+	     val (lpart, rpart) = s splitAt splitPoint(s)
+	     val v = lpart(0)
+	     val l = lpart.substring(2) 
+	     val r = rpart.substring(1, rpart.length-1) // ,
+	     Node(v, parse(l), parse(r))
+      }
+    }
+    def preInTree[T](pre: List[T], in: List[T]) : Tree[T] = 
+      if (pre.length == 0) Empty
+      else {
+        val t = pre(0)
+        val inLeft = in takeWhile (_!=t)
+        val _::inRight = in dropWhile (_!=t)
+        val preLeft = pre filter (inLeft contains _)
+        val preRight = pre filter (inRight contains _)
+        Node(t, preInTree(preLeft, inLeft), preInTree(preRight, inRight))
+      }
   }
   // P55: Construct completely balanced binary trees
   // In a completely balanced binary tree, the following property holds for every node: 
@@ -323,7 +416,46 @@ object Puzzles99 extends App {
   // We are only interested in the structure, not in the contents of the nodes
   val tree = bt.Node('a, bt.Node('b, bt.Node('c, bt.Empty, bt.Empty), bt.Empty), 
 		  			  bt.Node('d, bt.Empty, bt.Node('e, bt.Empty, bt.Empty)))
-  println(tree)
+  println("P56: " + bt.isSymmetric(tree))
+  println("P56: " + bt.isSymmetric(tree.left))
+  // P57: Binary search trees (dictionaries), e.g.
+  // scala> End.addValue(2)
+  // res0: Node[Int] = T(2 . .)
+  // scala> res0.addValue(3)
+  // res1: Node[Int] = T(2 . T(3 . .))
+  // scala> res1.addValue(0)
+  // res2: Node[Int] = T(2 T(0 . .) T(3 . .))
+  // Hint: The signature of addValue should be addValue[U >: T <% Ordered[U]](x: U): Tree[U]
+  val t = bt.addNodes(List(2, 3, 0, 1, 6))
+  println("P57: " + t)
+  println("P57: " + bt.isSymmetric(bt.addNodes(List(5, 3, 18, 1, 4, 12, 21))))
+  println("P57: " + bt.isSymmetric(bt.addNodes(List(3, 2, 5, 7, 4))))
+  // P58: Apply the generate-and-test paradigm to construct all symmetric, completely balanced binary trees with a given number of nodes
+  println("P58: " + bt.symmetricBalancedTrees(5, 'x'))
+  // P61: Count the leaves of a binary tree
+  println("P61: " + bt.countLeaves(bt.Node('x', bt.Node('x', bt.Empty, bt.Empty), bt.Empty)))
+  // P61A: Collect the leaves of a binary tree in a list
+  println("P61A: " + bt.findLeaves(bt.Node('a', bt.Node('b', bt.Empty, bt.Empty), bt.Empty)))
+  // P62: Collect the internal nodes of a binary tree in a list
+  println("P62: " + bt.findInternals(tree))
+  // P62B: Collect the nodes at a given level in a list (root is at level 1)
+  println("P62B: " + bt.findAtLevel(tree, 2))
+  // P67: A string representation of binary trees
+  // the reverse of toString method, e.g. a(b(d(.,.),e(.,.)),c(.,f(g(.,.),.)))
+  val sTree = bt.Node('a', bt.Node('b', bt.Node('d'), bt.Node('e')), 
+		  				   bt.Node('c', bt.Empty, bt.Node('f', bt.Node('g'), bt.Empty)))
+  println("P67: " + sTree)
+  val tStr = "a(b(d(.,.),e(.,.)),c(.,f(g(.,.),.)))"
+  println("P67: " + bt.parse(tStr))
+  // P68: Preorder and Inorder traverse
+  println("P68: " + sTree.preorder)
+  println("P68: " + sTree.inorder)
+  // P68b: If both the preorder sequence and the inorder sequence of the nodes of a binary tree are given, 
+  // then the tree is determined unambiguously. 
+  // Write a method preInTree that does the job.
+  val preorder = List('a', 'b', 'd', 'e', 'c', 'f', 'g')
+  val inorder = List('d', 'b', 'e', 'a', 'c', 'g', 'f')
+  println("P68b: " + bt.preInTree(preorder, inorder))
   /**
    * Multiway Trees P70 - P73
    */

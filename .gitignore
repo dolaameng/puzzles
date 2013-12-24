@@ -35,6 +35,6 @@ nosetests.xml
 .project
 .pydevproject
 
-data
-target
+data/
+target/
 bin
