@@ -458,13 +458,100 @@ object Puzzles99 extends App {
   println("P68b: " + bt.preInTree(preorder, inorder))
   /**
    * Multiway Trees P70 - P73
+   * A multiway tree is composed of a root element and a (possibly empty) set of successors which are multiway trees themselves. 
+   * A multiway tree is never empty. The set of successor trees is sometimes called a forest.
+   * The code to represent these is somewhat simpler than the code for binary trees, 
+   * partly because we don't separate classes for nodes and terminators, 
+   * and partly because we don't need the restriction that the value type be ordered.
    */
-  
+   object mt {
+    case class MTree[+T](value : T, children: List[MTree[T]]) {
+      def this(value : T) = this(value, List())
+      override def toString  = value + "{" + children.map(_.toString).mkString(",") + "}"
+      def nodeCount: Int = 1 + children.map(_.nodeCount).sum
+      def pathLength : Int = {
+        def pathLengthR(level: Int, tree: MTree[T]) : Int = {
+          level * tree.children.length + tree.children.map(pathLengthR(level+1, _)).sum
+        }
+        pathLengthR(1, this)
+      }
+      def postorder : List[T] = children.flatMap(_.postorder) :+ value
+      def lispyTree: String = "(%s %s)".format(value, children.map(_.lispyTree).mkString(" "))
+    }
+    object MTree {
+      def apply[T](value: T) = new MTree(value)
+    }
+    implicit class StrToMTree(value : String) {
+      // e.g. "afg^^c^bd^e^^^"
+      def toMTree() : MTree[Char]= {
+        def groupByLevel(str: String) : (Char, List[List[Char]]) = {
+          val levels = str.foldLeft(List(-1)){
+            case (accum, '^') => accum :+ (accum.last-1)
+            case (accum, c) => accum :+ (accum.last+1)
+          }.tail.tail
+          val root = str(0)
+          val partitions = levels.zip(str.slice(1, str.length))
+                                .foldLeft(List(List[Char]())) {
+                                  case (xs, (i, c)) if i <=0 => xs :+ Nil
+                                  case (xs, (i, c)) => xs.init :+ (xs.last :+ c)
+                                }
+          //println("HERE: " + partitions.filterNot(_.isEmpty))
+          (root, partitions.filterNot(_.isEmpty))
+        }
+        val (root, childStrs) = groupByLevel(value)
+        MTree(root, childStrs.map(_.mkString("").toMTree))
+      }
+    }
+   }
+   import mt._
+   val mtree = MTree('a', List(MTree('f', List(MTree('g'))), MTree('c'), MTree('b', List(MTree('d'), MTree('e')))))
+   println(mtree)
+   // P70C: Count the nodes of a multiway tree
+   println("P70C: " + mtree.nodeCount) 
+   // P70: Tree construction from a node string
+   // assume that tree node values are single char, and "^" indicates a backtrack
+   // e.g., "afg^^c^bd^e^^^"
+   val strForMtree = "afg^^c^bd^e^^^"
+   println("P70: " + strForMtree.toMTree)
+   // P71: Determine the internal path length of a tree
+   // We define the internal path length of a multiway tree 
+   // as the total sum of the path lengths from the root to all nodes of the tree.
+   println("P71: " + strForMtree.toMTree.pathLength)
+   // P72: Construct the postorder sequence of the tree nodes
+   println("P72: " + strForMtree.toMTree.postorder)
+   // P73: List-like tree representation
+   // In lisp, a list is a tree, with first element always representing root 
+   // and the rest representing the children, e.g.
+   // (a b), (a (b c)), (b d e), (a (f g) c (b d e))
+   println("P73: " + strForMtree.toMTree.lispyTree)
   /**
    * Graphs P80 - P89
    */
   
   /** 
    *  Miscs P90 - P99
+   * 1. pick the right data structure representation 
+   * 2. pick a search algorithm for contraint-satisfying & optimization
+   * 3. do the search
    */
+   // P90 Eight Queens problem
+   // Representation: fixed the rows from 0 to N-1, use List[Int] to represent columns
+   // Demostration of structure of CSP 
+   def nQueens(n: Int) : List[List[Int]] = {
+     import math.abs
+     def isSatisfied(i: Int, partial : List[Int]) = {
+      partial.zipWithIndex.forall{case (x, j) => (x != i) && ((j+1) != abs(x-i))}
+     }
+     def solveQueens(cols: List[Int]) : List[List[Int]] = 
+      if (cols.length == 0) List(List[Nothing]())
+      else {
+        for {
+          i <- cols 
+          partial <- solveQueens(cols filterNot (_ == i))
+          if isSatisfied(i, partial)
+        } yield i::partial 
+     }.toList
+     solveQueens((0 until n).toList)
+   }
+   println("P90: " + nQueens(4))
 }
