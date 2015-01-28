@@ -1,0 +1,1 @@
+1. [Programming Contest Problem Types](http://train.usaco.org/usacotext2?a=DpfeoTCQrgO&S=probs)
