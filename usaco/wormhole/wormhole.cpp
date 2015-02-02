@@ -162,10 +162,10 @@ int main () {
 	cout << pairs.size() << endl;
 	*/
 
-	vector<vector<int>> M = {{0, 1, 0, 1}, 
+	vector<vector<int>> M = {{0, 0, 0, 1}, 
 							{0, 0, 1, 0}, 
 							{0, 1, 0, 0}, 
-							{1, 0, 1, 0}};
-	//print_matrix(multiply(M, M));
+							{1, 0, 0, 0}};
+	print_matrix(multiply(M, M));
 	return 0;
 }
