@@ -9,7 +9,6 @@ LANG: C++11
 #include <string>
 #include <cassert>
 #include <vector>
-#include <algorithm>
 
 using namespace std;
 
@@ -37,10 +36,6 @@ public:
 	int x;
 	int y;
 	WormHole(int x_, int y_): x(x_), y(y_) {}; 
-	static bool lessthan(const WormHole & lhs, const WormHole & rhs) {
-		if (lhs.y == rhs.y) return lhs.x < rhs.x;
-		else return lhs.y < rhs.y;
-	}
 };
 
 
@@ -64,48 +59,73 @@ void all_pairs(const vector<int> & partial, const vector<int> resource, const in
 	}
 }
 
-bool bt_has_cycle(const vector<int> & partial, const vector<vector<int>> & pairs, 
-					const vector<vector<int>> & graph) {
-	const int n = partial.size();
-	bool repeat = false;
-	for (int j = n-3; j >= 0; j-=2) {
-		if (partial[j] == partial[n-1]){
-			repeat = true;
-			break;
-		}
+
+int trace(const vector<vector<int>> & A) {
+	const size_t n = A.size();
+	int tr = 0;
+	for (int d = 0; d < n; ++d) {
+		tr += A[d][d];
 	}
-	if (n > 1 && repeat) {
-		print_vector(partial);
-		return true;
-	} else {
-		const vector<vector<int>> * resource = &pairs;
-		if (n % 2 == 1) resource = &graph;
-		for (int next = 0; next < pairs.size(); ++next) {
-			if ((*resource)[partial[n-1]][next] == 0) continue;
-			vector<int> candidate(partial);
-			candidate.push_back(next);
-			if (bt_has_cycle(candidate, pairs, graph)) return true;
-		}
-		return false;
-	}
+	return tr;
 }
 
-// realizing modeling by a graph is not a general idea, as 
-// you need to distinguish between wormhole jump and normal move
-bool is_loop(const vector<int> & pair_path, const vector<vector<int>> & graph) {
-	// build the adjancent matrix for pair path
-	const size_t n = graph.size();
-	vector<vector<int>> pairs(n, vector<int>(n, 0));
-	for (int i = 0; i < pair_path.size(); i+=2) {
-		pairs[pair_path[i]][pair_path[i+1]] = 1;
-		pairs[pair_path[i+1]][pair_path[i]] = 1;
+vector<vector<int>> multiply(const vector<vector<int>> & A, const vector<vector<int>> & B) {
+	const size_t n = A.size();
+	vector<vector<int>> C(n, vector<int>(n, 0));
+	for (int r = 0; r < n; ++r) {
+		for (int c = 0; c < n; ++c) {
+			int value = 0;
+			for (int k = 0; k < n; ++k) {
+				value += A[r][k] * B[k][c];
+			}
+			C[r][c] = value;
+		}
 	}
-	for (int start = 0; start < n; ++start) {
-		vector<int> partial;
-		partial.push_back(start);
-		if ( bt_has_cycle(partial, pairs, graph) )
+	return C;
+}
+
+int row_sum(const vector<vector<int>> M, int r) {
+	int total = 0;
+	for (int c = 0; c < M.size(); ++c) {
+		total += M[r][c];
+	}
+	return total;
+}
+
+int col_sum(const vector<vector<int>> M, int c) {
+	int total = 0;
+	for (int r = 0; r < M.size(); ++r) {
+		total += M[r][c];
+	}
+	return total;
+}
+
+bool is_loop(const vector<int> & pair, const vector<vector<int>> & graph) {
+	
+	vector<vector<int>> A;
+	for (int r = 0; r < graph.size(); ++r) A.push_back(graph[r]);
+	for (int i = 0; i < pair.size(); i+=2) {
+		if (col_sum(graph, pair[i]) != 0 ) {
+			A[pair[i]][pair[i+1]] = 1;
+		}
+		
+		if (col_sum(graph, pair[i+1]) != 0) {
+			A[pair[i+1]][pair[i]] = 1;
+		}
+	}
+	print_vector(pair);
+	print_matrix(graph);
+	print_matrix(A);
+	vector<vector<int>> AA = A;
+	for (int it = 0; it < pair.size(); ++it) {
+		if (trace(AA) > 0) {
+			cout << "solution: " << endl;
+			print_matrix(AA);
 			return true;
+		}
+		AA = multiply(AA, A);
 	}
+	cout << "false" << endl;
 	return false;
 }
 
@@ -127,36 +147,48 @@ int main () {
 
 	// build the connection graph based on x, y coords 
 	// if i.x < j.x and i.y == j.y
-	sort(holes.begin(), holes.end(), WormHole::lessthan);
-	//for (const WormHole & wh : holes) {
-	//	cout << wh.x << "," << wh.y << endl;
-	//}
 	vector<vector<int>> graph(n, vector<int>(n, 0));
-	for (int i = 0; i < n-1; ++i)  {
-		const WormHole & hi = holes[i];
-		const WormHole & hj = holes[i+1];
-		if (hi.x < hj.x && hi.y == hj.y) graph[i][i+1] = 1;
-		
+	for (int i = 0; i < n; ++i) {
+		for (int j = 0; j < n; ++j) {
+			const WormHole & hi = holes[i];
+			const WormHole & hj = holes[j];
+			if (hi.x < hj.x && hi.y == hj.y) graph[i][j] = 1;
+		}
 	}
-	//print_matrix(graph);
 
-	// generate all pairing
 	vector<vector<int>> pairs;
 	vector<int> resource;
 	for (int r = 0; r < n; ++r) resource.push_back(r);
 	all_pairs(vector<int>(), resource, n, pairs);
 
-	// solutions by brute force explore
-
 	vector<int> solutions;
 	for (int p = 0; p < pairs.size(); ++p) {
 		if (is_loop(pairs[p], graph)) {
 			solutions.push_back(p);
-			//print_vector(pairs[p]);
 		}
 	}
 	fout << solutions.size() << endl;
 
 
+	// debug 
+	/*
+	for (int i = 0; i < n; ++i) {
+		for (int j = 0; j < n; ++j) {
+			cout << graph[i][j] << " ";
+		}
+		cout << endl;
+	}
+	
+	n = 12;
+	cout << n << endl;
+	
+	cout << pairs.size() << endl;
+	*/
+
+	vector<vector<int>> M = {{0, 0, 0, 1}, 
+							{0, 0, 1, 0}, 
+							{0, 1, 0, 0}, 
+							{1, 0, 0, 0}};
+	//print_matrix(multiply(multiply(M, M), M));
 	return 0;
 }
