@@ -84,25 +84,48 @@ vector<vector<int>> multiply(const vector<vector<int>> & A, const vector<vector<
 	return C;
 }
 
+int row_sum(const vector<vector<int>> M, int r) {
+	int total = 0;
+	for (int c = 0; c < M.size(); ++c) {
+		total += M[r][c];
+	}
+	return total;
+}
+
+int col_sum(const vector<vector<int>> M, int c) {
+	int total = 0;
+	for (int r = 0; r < M.size(); ++r) {
+		total += M[r][c];
+	}
+	return total;
+}
 
 bool is_loop(const vector<int> & pair, const vector<vector<int>> & graph) {
 	
 	vector<vector<int>> A;
 	for (int r = 0; r < graph.size(); ++r) A.push_back(graph[r]);
 	for (int i = 0; i < pair.size(); i+=2) {
-		if (A[pair[i]][pair[i+1]] == 0) A[pair[i]][pair[i+1]] = 1;
-		if (A[pair[i+1]][pair[i]] == 0) A[pair[i+1]][pair[i]] = 1;
+		if (col_sum(graph, pair[i]) != 0 ) {
+			A[pair[i]][pair[i+1]] = 1;
+		}
+		
+		if (col_sum(graph, pair[i+1]) != 0) {
+			A[pair[i+1]][pair[i]] = 1;
+		}
 	}
-	//print_vector(pair);
-	//print_matrix(graph);
-	//print_matrix(A);
+	print_vector(pair);
+	print_matrix(graph);
+	print_matrix(A);
 	vector<vector<int>> AA = A;
 	for (int it = 0; it < pair.size(); ++it) {
-		if (trace(AA) != 0) {
+		if (trace(AA) > 0) {
+			cout << "solution: " << endl;
+			print_matrix(AA);
 			return true;
 		}
 		AA = multiply(AA, A);
 	}
+	cout << "false" << endl;
 	return false;
 }
 
@@ -144,7 +167,7 @@ int main () {
 			solutions.push_back(p);
 		}
 	}
-	cout << solutions.size() << endl;
+	fout << solutions.size() << endl;
 
 
 	// debug 
@@ -166,6 +189,6 @@ int main () {
 							{0, 0, 1, 0}, 
 							{0, 1, 0, 0}, 
 							{1, 0, 0, 0}};
-	print_matrix(multiply(M, M));
+	//print_matrix(multiply(multiply(M, M), M));
 	return 0;
 }
