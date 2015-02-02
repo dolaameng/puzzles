@@ -1,0 +1,76 @@
+/*
+ID: dolabot1
+PROG: wormhole
+LANG: C++11
+*/
+
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <cassert>
+#include <vector>
+
+using namespace std;
+
+// brute force: 
+// (1) N objects (<= 12) to form N/2 pairs, there are N! / (2!^(N/2)) / (N/2)! <= 10e5 of possible pairing
+// for each possible pairing ...
+// (2) for each possible path (N!) around 10e12 -- too much
+// (3) for each possible path (h1, h2) (h3, h4) ..., if it includes a loop, there must be h3.x > h2.x and h3.y == h2.y
+// solvable by backtracking?!
+
+class WormHole {
+public:
+	int x;
+	int y;
+	WormHole(int x_, int y_): x(x_), y(y_) {}; 
+};
+
+vector<vector<WormHole>> looped_path;
+
+bool is_loop(const vector<WormHole> & path) {
+	const size_t n = path.size();
+	assert ( n % 2 == 0 );
+}
+
+// equivalent to a depth-first search
+void bt_path(const vector<WormHole> & partial, const vector<WormHole> resource) {
+	if (is_loop(partial)) {
+		looped_path.push_back(partial);
+	} else {
+		for (int i = 0; i < resource.size(); ++i) {
+			for (int j = i; j < resource.size(); ++j) {
+				vector<WormHole> candidate(partial);
+				candidate.push_back(resource[i]); // insert pair of holes
+				candidate.push_back(resource[j]);
+				vector<WormHole> new_resource;
+				for(int r = 0; r < resource.size(); ++r) {
+					if (r != i && r != j) new_resource.push_back(resource[i]);
+				}
+				bt_path(candidate, new_resource);
+			}
+		}
+	}
+}
+
+int main () {
+	// input and output
+	ifstream fin ("wormhole.in");
+	ofstream fout ("wormhole.out");
+	int n;
+	vector<WormHole> holes;
+	fin >> n;
+	assert (n % 2 == 0);
+	for (int i = 0; i < n; ++i) {
+		int x, y;
+		fin >> x >> y;
+		holes.push_back(WormHole(x, y));
+	}
+
+	// debug
+	cout << n << endl;
+	for (const WormHole & wh : holes) {
+		cout << wh.x << "," << wh.y << endl;
+	}
+	return 0;
+}
