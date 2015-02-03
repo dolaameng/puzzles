@@ -1,0 +1,52 @@
+/*
+ID: dolabot1
+PROG: skidesign
+LANG: C++11
+*/
+
+// I misunderstood the problem as it must be using mass removed from one hill to put on another. It is not a constraint.
+
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <cassert>
+#include <vector>
+#include <algorithm>
+
+using namespace std;
+
+int main () {
+	// input output
+	ifstream fin ("skidesign.in");
+	ofstream fout ("skidesign.out");
+	const int LMT = 17;
+	int n; fin >> n;
+	vector<int> hts;
+	for (int i = 0; i < n; ++i){
+		int h; fin >> h; hts.push_back(h);
+	}
+	// sort the heights
+	vector<int> new_hts(hts);
+	sort(new_hts.begin(), new_hts.end());
+	// greedy search
+	int cost = 0;
+	while (new_hts[n-1] - new_hts[0] > LMT) {
+		for(int h : new_hts) cout << h << " "; cout << endl;
+		int s = new_hts[n-1] + new_hts[0];
+		int higher = (s+LMT)/2;
+		int lower = s - higher;
+		cost += (new_hts[n-1] - higher) * (new_hts[n-1] - higher);
+		cost += (lower - new_hts[0]) * (lower - new_hts[0]);
+		new_hts[n-1] = higher; new_hts[0] = lower;
+		sort(new_hts.begin(), new_hts.end());
+		assert(accumulate(hts.begin(), hts.end(), 0) == accumulate(new_hts.begin(), new_hts.end(), 0));
+	}
+	for(int h : new_hts) cout << h << " "; cout << endl;
+	cout << "total cost: " << cost << endl;
+	cout << (42*42+19*19+11*11+4*4) * 2 << endl;
+
+	fout << cost << endl;
+	//debug 
+
+	return 0;
+}
