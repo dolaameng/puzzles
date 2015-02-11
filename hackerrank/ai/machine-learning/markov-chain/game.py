@@ -5,8 +5,9 @@ NTIMES = 5000
 MAX_STEPS = 1000
 
 def play(faces, ladders, snakes):
-	fvalues, fprobs = zip(*faces)
-	## TODO
+	vs, ps = zip(*faces)
+	face_probs = [(vs[i], ps[:i+1]) for i in xrange(7)]
+	print face_probs
 	nsteps, pos = 0, 1
 	while (nsteps <= MAX_STEPS and pos != R*C):
 		pass
