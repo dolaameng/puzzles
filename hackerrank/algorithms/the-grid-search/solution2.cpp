@@ -14,7 +14,7 @@ string hash_fn(const vector<string> & grid,
 	return h;
 }
 
-set<string> build_hash(const char first, const char last,
+bool search(const string & pat, const char first, const char last,
 	const vector<string> & grid, 
 	const int gridnr, const int gridnc,
 	const int patnr, const int patnc) {
@@ -23,12 +23,11 @@ set<string> build_hash(const char first, const char last,
 		for (int c = 0; c < gridnc - patnc + 1; ++c) {
 			if (grid[r][c] == first && grid[r+patnr-1][c+patnc-1]==last){
 				string h = hash_fn(grid, r, r+patnr, c, c+patnc);
-				//cout << h << endl;
-				hash_table.insert(h);
+				if (h == pat) return true;
 			}
 		}
 	}
-	return hash_table;
+	return false;
 }
 
 int main () {
@@ -44,16 +43,13 @@ int main () {
 		//cout << patnr << " " << patnc << endl;
 		for (int r = 0; r < patnr; ++r) cin >> pattern[r];
 		// hashing grid
-		set<string> grid_hash = build_hash(
-			pattern[0][0], pattern[patnr-1][patnc-1],
-			grid, gridnr, gridnc, patnr, patnc);
 		string pat_hash = hash_fn(pattern, 0, patnr, 0, patnc);
 		//cout << pat_hash << endl;
-		if (grid_hash.find(pat_hash) != grid_hash.end()) {
-			cout << "YES" << endl;
-		} else {
-			cout << "NO" << endl;
-		}
+		bool found = search(pat_hash,
+			pattern[0][0], pattern[patnr-1][patnc-1],
+			grid, gridnr, gridnc, patnr, patnc);
+		if (found) cout << "YES" << endl;
+		else cout << "NO" << endl;
 	}
 	return 0;
 }
