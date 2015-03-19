@@ -25,46 +25,49 @@ vector<pair<int,int> > riders;
 vector<pair<int,int> > bikes;
 vector<vector<int> > r2b;
 
-int match (const vector<vector<int> > & graph) {
-	int max_edges = 0;
-	stack<vector<int> > que;
-	que.push(vector<int>());
-	while (!que.empty()) {
-		const vector<int>  solution = que.top(); que.pop();
-		//cout << "solution:"; for(int i = 0; i < solution.size(); ++i) cout << solution[i] << " ";
-		//cout << endl;
-		int node = solution.size();
-		if(node == N) {
-			int total = 0; for (int i = 0; i < N; ++i) {
-				total += (solution[i]!=-1);
-			}
-			if (total > max_edges) max_edges = total;
-			if (max_edges >= K) return K;
-			continue;
-		}
 
-		int total = 0; for (int i = 0; i < solution.size(); ++i) {
-			total += (solution[i]!=-1);
-		}
-		if (total + N - node < max_edges) continue;
+int max_matches = 0;
+vector<bool> taken_bikes;
+pair<int, int> solution;
 
-		vector<int> new_solution(solution);
-		new_solution.push_back(-1);
-		
-
-		for (int m = 0; m < graph[node].size(); ++m) {
-			if (find(solution.begin(), solution.end(), graph[node][m]) == solution.end()) {
-				//cout << "node:" << node << "m:" << graph[node][m] << endl;
-				new_solution[node] = graph[node][m];
-				que.push(new_solution);
-			}
-			
-		} 
-
-		if (new_solution[node] == -1) que.push(new_solution);
+void dfs(const vector<vector<int> > & graph) {
+	int matches = solution.first; int node = solution.second;
+	cout << "matches:" << matches << " node:" << node << " max:" << max_matches << endl;
+	if (max_matches >= K) return;
+	
+	if (matches >= K) {
+		max_matches = K;
+		return;
 	}
+	if (node == N) {
+		if (matches > max_matches) max_matches = matches;
+		return;
+	}
+	if ( (matches + N - node) < max_matches) return;
+	
+	bool explored = false;
+	for (int i = 0; i < graph[node].size(); ++i) {
+		int m = graph[node][i];
+		if (!taken_bikes[m] && max_matches < K) {
+			explored = true;
+			solution = make_pair(matches+1, node+1); taken_bikes[m] = true;
+			dfs(graph);
+			solution = make_pair(matches-1, node-1); taken_bikes[m] = false;
+		}
+	}
+	if (!explored) {
+		solution = make_pair(matches, node+1);
+		dfs(graph);
+		solution = make_pair(matches, node-1); 
+	}
+}
 
-	return max_edges;
+int match (const vector<vector<int> > & graph) {
+	taken_bikes = vector<bool>(M, false);
+	max_matches = 0;
+	solution = make_pair(0, 0);
+	dfs(graph);
+	return max_matches;
 }
 
 int euclidean(const pair<int,int> & xy1, const pair<int,int> & xy2) {
