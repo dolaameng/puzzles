@@ -1,6 +1,15 @@
 #include <iostream>
 using namespace std;
 
+/*
+Input:
+2
+2 1 2 
+3 1 2
+Output:
+72
+*/
+
 int main () {
 	int N; cin >> N;
 	vector<int> ps;
